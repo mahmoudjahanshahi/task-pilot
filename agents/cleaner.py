@@ -1,3 +1,7 @@
+# A Semantic Kernel plugin that provides a function to clean raw input text.
+# It removes timestamps, filler words, and normalizes punctuation and whitespace.
+# This plugin can be used to preprocess text before further analysis or summarization.
+
 from semantic_kernel.functions import kernel_function
 
 class CleanerPlugin:

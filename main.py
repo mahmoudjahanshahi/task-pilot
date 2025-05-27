@@ -8,8 +8,11 @@ from semantic_kernel.utils.logging import setup_logging
 from semantic_kernel.connectors.ai.open_ai import AzureChatCompletion
 from semantic_kernel.connectors.ai.open_ai.prompt_execution_settings.azure_chat_prompt_execution_settings import AzureChatPromptExecutionSettings
 from semantic_kernel.connectors.ai.function_choice_behavior import FunctionChoiceBehavior
-from agents.cleaner import CleanerPlugin
 from semantic_kernel.functions.kernel_arguments import KernelArguments
+
+# Import custom plugins and functions
+from agents.cleaner import CleanerPlugin
+from agents.summarizer import create_summarizer
 
 async def main():
     load_dotenv()
@@ -20,7 +23,8 @@ async def main():
     chat_completion = AzureChatCompletion(
         deployment_name=os.getenv("AZURE_OPENAI_DEPLOYMENT_NAME"),
         api_key=os.getenv("AZURE_OPENAI_API_KEY"),
-        base_url=os.getenv("AZURE_OPENAI_ENDPOINT")
+        base_url=os.getenv("AZURE_OPENAI_ENDPOINT"),
+        api_version=os.getenv("AZURE_OPENAI_API_VERSION")
     )
     kernel.add_service(chat_completion)
 
@@ -43,14 +47,24 @@ async def main():
     arguments = KernelArguments(text=input_text)
 
     # Invoke
-    result = await kernel.invoke(
+    cleaned = await kernel.invoke(
         plugin_name="Cleaner",
         function_name="clean_text",
         arguments=arguments
     )
 
     print("\n--- Cleaned Output ---\n")
-    print(result)
+    print(cleaned)
+
+    # Create the summarizer agent
+    summarizer = create_summarizer(chat_completion)
+
+    # Call the agent with cleaned text
+    summary = await summarizer.get_response(messages=str(cleaned))
+
+    print("\n--- Summary ---\n")
+    print(summary)
+
 
 # Run the main function
 if __name__ == "__main__":
