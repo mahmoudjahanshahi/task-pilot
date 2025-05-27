@@ -13,6 +13,7 @@ from semantic_kernel.functions.kernel_arguments import KernelArguments
 # Import custom plugins and functions
 from agents.cleaner import CleanerPlugin
 from agents.summarizer import create_summarizer
+from agents.extractor import create_extractor
 
 async def main():
     load_dotenv()
@@ -36,13 +37,13 @@ async def main():
     kernel.add_plugin(CleanerPlugin(), plugin_name="Cleaner")
 
     # Settings
-    settings = AzureChatPromptExecutionSettings()
+    settings = AzureChatPromptExecutionSettings(temperature=0.2)
     settings.function_choice_behavior = FunctionChoiceBehavior.Auto()
 
     # Example input
     input_text = """
-    [10:05 AM] So, like, um, we need to finish the report by Friday, you know? 
-    And, uh, maybe call John? Yeah, that’s all I remember.
+    [10:05 AM] So, like, um, you need to finish the report by Friday, you know? 
+    And, uh, maybe I should call John? Yeah, that’s all I remember.
     """
     arguments = KernelArguments(text=input_text)
 
@@ -60,10 +61,25 @@ async def main():
     summarizer = create_summarizer(chat_completion)
 
     # Call the agent with cleaned text
-    summary = await summarizer.get_response(messages=str(cleaned))
+    summary = await summarizer.get_response(
+        messages=str(cleaned),
+        execution_settings=settings
+        )
 
     print("\n--- Summary ---\n")
     print(summary)
+
+    # Create the extractor agent
+    extractor = create_extractor(chat_completion)
+
+    # Call the agent with summarized text
+    tasks = await extractor.get_response(
+        messages=str(summary),
+        execution_settings=settings
+        )
+
+    print("\n--- Extracted Tasks ---\n")
+    print(tasks)
 
 
 # Run the main function
